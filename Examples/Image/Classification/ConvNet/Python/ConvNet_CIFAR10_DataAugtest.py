@@ -11,7 +11,7 @@ import numpy as np
 import cntk
 import _cntk_py
 
-# Paths relative to current python file. 
+# Paths relative to current python file.
 abs_path   = os.path.dirname(os.path.abspath(__file__))
 data_path  = os.path.join(abs_path, "..", "..", "..", "DataSets", "CIFAR-10")
 model_path = os.path.join(abs_path, "Models")
@@ -23,16 +23,16 @@ num_channels = 3  # RGB
 num_classes  = 10
 
 # Define the reader for both training and evaluation action.
-def create_reader(map_file, mean_file, is_training):
+def create_reader(map_file, mean_file, train):
     if not os.path.exists(map_file) or not os.path.exists(mean_file):
         raise RuntimeError("File '%s' or '%s' does not exist. Please run install_cifar10.py from DataSets/CIFAR-10 to fetch them" %
                            (map_file, mean_file))
 
     # transformation pipeline for the features has jitter/crop only when training
     transforms = []
-    if is_training:
+    if train:
         transforms += [
-            cntk.io.ImageDeserializer.crop(crop_type='RandomSide', side_ratio=0.8, jitter_type='uniRatio') # train uses jitter
+            cntk.io.ImageDeserializer.crop(crop_type='Random', ratio=0.8, jitter_type='uniRatio') # train uses jitter
         ]
     transforms += [
         cntk.io.ImageDeserializer.scale(width=image_width, height=image_height, channels=num_channels, interpolations='linear'),
@@ -41,32 +41,11 @@ def create_reader(map_file, mean_file, is_training):
     # deserializer
     return cntk.io.MinibatchSource(cntk.io.ImageDeserializer(map_file, cntk.io.StreamDefs(
         features = cntk.io.StreamDef(field='image', transforms=transforms), # first column in map file is referred to as 'image'
-        labels   = cntk.io.StreamDef(field='label', shape=num_classes))),   # and second as 'label'
-        randomize=is_training)
-
-# Local Response Normalization layer. See Section 3.3 of the paper: 
-# https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf 
-# The mathematical equation is: 
-#   b_{x,y}^i=a_{x,y}^i/(k+\alpha\sum_{j=max(0,i-n)}^{min(N-1, i+n)}(a_{x,y}^j)^2)^\beta
-# where a_{x,y}^i is the activity of a neuron comoputed by applying kernel i at position (x,y)
-# N is the total number of kernals, n is half normalization width. 
-def LRN(k, n, alpha, beta): 
-    x = cntk.blocks.Placeholder(name='lrn_arg') 
-    x2 = cntk.ops.square(x) 
-    # reshape to insert a fake singleton reduction dimension after the 3th axis (channel axis). Note Python axis order and BrainScript are reversed. 
-    x2s = cntk.ops.reshape(x2, (1, cntk.InferredDimension), 0, 1)
-    W = cntk.ops.constant(alpha/(2*n+1), (1,2*n+1,1,1), name='W')
-    # 3D convolution with a filter that has a non 1-size only in the 3rd axis, and does not reduce since the reduction dimension is fake and 1
-    y = cntk.ops.convolution (W, x2s)
-    # reshape back to remove the fake singleton reduction dimension
-    b = cntk.ops.reshape(y, cntk.InferredDimension, 0, 2)
-    den = cntk.ops.exp(beta * cntk.ops.log(k + b)) 
-    apply_x = cntk.ops.element_divide(x, den)
-    return cntk.blocks.Block(apply_x, 'LRN')
+        labels   = cntk.io.StreamDef(field='label', shape=num_classes))))   # and second as 'label'
 
 # Train and evaluate the network.
-def convnetlrn_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
-    _cntk_py.set_computation_network_trace_level(1)
+def convnet_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
+    _cntk_py.set_computation_network_trace_level(0)
 
     # Input variables denoting the features and label data
     input_var = cntk.ops.input_variable((num_channels, image_height, image_width))
@@ -75,12 +54,11 @@ def convnetlrn_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
     # apply model to input
     scaled_input = cntk.ops.element_times(cntk.ops.constant(0.00390625), input_var)
 
-    with cntk.layers.default_options (activation=cntk.ops.relu, pad=True): 
+    with cntk.layers.default_options(activation=cntk.ops.relu, pad=True): 
         z = cntk.models.Sequential([
             cntk.models.LayerStack(2, lambda : [
                 cntk.layers.Convolution((3,3), 64), 
                 cntk.layers.Convolution((3,3), 64), 
-                LRN (1.0, 4, 0.001, 0.75),
                 cntk.layers.MaxPooling((3,3), (2,2))
             ]), 
             cntk.models.LayerStack(2, lambda i: [
@@ -162,5 +140,5 @@ if __name__=='__main__':
     reader_train = create_reader(os.path.join(data_path, 'train_map.txt'), os.path.join(data_path, 'CIFAR-10_mean.xml'), True)
     reader_test  = create_reader(os.path.join(data_path, 'test_map.txt'), os.path.join(data_path, 'CIFAR-10_mean.xml'), False)
 
-    convnetlrn_cifar10_dataaug(reader_train, reader_test)
+    convnet_cifar10_dataaug(reader_train, reader_test)
 
