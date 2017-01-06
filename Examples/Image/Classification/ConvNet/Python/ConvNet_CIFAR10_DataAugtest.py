@@ -23,16 +23,16 @@ num_channels = 3  # RGB
 num_classes  = 10
 
 # Define the reader for both training and evaluation action.
-def create_reader(map_file, mean_file, is_training):
+def create_reader(map_file, mean_file, train):
     if not os.path.exists(map_file) or not os.path.exists(mean_file):
         raise RuntimeError("File '%s' or '%s' does not exist. Please run install_cifar10.py from DataSets/CIFAR-10 to fetch them" %
                            (map_file, mean_file))
 
     # transformation pipeline for the features has jitter/crop only when training
     transforms = []
-    if is_training:
+    if train:
         transforms += [
-            cntk.io.ImageDeserializer.crop(crop_type='randomside', side_ratio=0.8, jitter_type='uniratio') # train uses jitter
+            cntk.io.ImageDeserializer.crop(crop_type='Random', ratio=0.8, jitter_type='uniRatio') # train uses jitter
         ]
     transforms += [
         cntk.io.ImageDeserializer.scale(width=image_width, height=image_height, channels=num_channels, interpolations='linear'),
@@ -41,8 +41,7 @@ def create_reader(map_file, mean_file, is_training):
     # deserializer
     return cntk.io.MinibatchSource(cntk.io.ImageDeserializer(map_file, cntk.io.StreamDefs(
         features = cntk.io.StreamDef(field='image', transforms=transforms), # first column in map file is referred to as 'image'
-        labels   = cntk.io.StreamDef(field='label', shape=num_classes))),   # and second as 'label'
-        randomize=is_training)
+        labels   = cntk.io.StreamDef(field='label', shape=num_classes))))   # and second as 'label'
 
 # Train and evaluate the network.
 def convnet_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
@@ -86,7 +85,6 @@ def convnet_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
     
     # trainer object
     learner = cntk.learner.momentum_sgd(z.parameters, lr_schedule, mm_schedule,
-                                        unit_gain = True,
                                         l2_regularization_weight = l2_reg_weight)
     trainer =  cntk.Trainer(z, ce, pe, learner)
 

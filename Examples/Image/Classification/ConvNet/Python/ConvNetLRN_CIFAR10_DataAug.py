@@ -13,7 +13,7 @@ import _cntk_py
 
 # Paths relative to current python file.
 abs_path   = os.path.dirname(os.path.abspath(__file__))
-data_path  = os.path.join(abs_path, "..", "..", "..", "DataSets", "CIFAR-10")
+data_path  = os.path.join(abs_path, "..", "..", "..", "Datasets", "CIFAR-10")
 model_path = os.path.join(abs_path, "Models")
 
 # model dimensions
@@ -32,7 +32,7 @@ def create_reader(map_file, mean_file, is_training):
     transforms = []
     if is_training:
         transforms += [
-            cntk.io.ImageDeserializer.crop(crop_type='randomside', side_ratio=0.8, jitter_type='uniratio') # train uses jitter
+            cntk.io.ImageDeserializer.crop(crop_type='Random', ratio=0.8, jitter_type='uniRatio') # train uses jitter
         ]
     transforms += [
         cntk.io.ImageDeserializer.scale(width=image_width, height=image_height, channels=num_channels, interpolations='linear'),
@@ -44,9 +44,23 @@ def create_reader(map_file, mean_file, is_training):
         labels   = cntk.io.StreamDef(field='label', shape=num_classes))),   # and second as 'label'
         randomize=is_training)
 
+def LRN(k, n, alpha, beta): 
+    x = cntk.blocks.Placeholder(name='lrn_arg') 
+    x2 = cntk.ops.square(x) 
+    # reshape to insert a fake singleton reduction dimension after the 3th axis (channel axis). Note Python axis order and BrainScript are reversed. 
+    x2s = cntk.ops.reshape(x2, (1, cntk.InferredDimension), 0, 1)
+    W = cntk.ops.constant(alpha/(2*n+1), (1,2*n+1,1,1), name='W')
+    # 3D convolution with a filter that has a non 1-size only in the 3rd axis, and does not reduce since the reduction dimension is fake and 1
+    y = cntk.ops.convolution (W, x2s)
+    # reshape back to remove the fake singleton reduction dimension
+    b = cntk.ops.reshape(y, cntk.InferredDimension, 0, 2)
+    den = cntk.ops.exp(beta * cntk.ops.log(k + b)) 
+    apply_x = cntk.ops.element_divide(x, den)
+    return cntk.blocks.Block(apply_x, 'LRN')
+
 # Train and evaluate the network.
 def convnet_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
-    _cntk_py.set_computation_network_trace_level(0)
+    _cntk_py.set_computation_network_trace_level(1)
 
     # Input variables denoting the features and label data
     input_var = cntk.ops.input_variable((num_channels, image_height, image_width))
@@ -55,11 +69,12 @@ def convnet_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
     # apply model to input
     scaled_input = cntk.ops.element_times(cntk.ops.constant(0.00390625), input_var)
 
-    with cntk.layers.default_options(activation=cntk.ops.relu, pad=True): 
+    with cntk.layers.default_options (activation=cntk.ops.relu, pad=True): 
         z = cntk.models.Sequential([
             cntk.models.LayerStack(2, lambda : [
                 cntk.layers.Convolution((3,3), 64), 
                 cntk.layers.Convolution((3,3), 64), 
+                LRN (1.0, 4, 0.001, 0.75),
                 cntk.layers.MaxPooling((3,3), (2,2))
             ]), 
             cntk.models.LayerStack(2, lambda i: [
@@ -86,7 +101,6 @@ def convnet_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
     
     # trainer object
     learner = cntk.learner.momentum_sgd(z.parameters, lr_schedule, mm_schedule,
-                                        unit_gain = True,
                                         l2_regularization_weight = l2_reg_weight)
     trainer =  cntk.Trainer(z, ce, pe, learner)
 
