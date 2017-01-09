@@ -44,6 +44,9 @@ def create_reader(map_file, mean_file, is_training):
         labels   = cntk.io.StreamDef(field='label', shape=num_classes))),   # and second as 'label'
         randomize=is_training)
 
+# Local Response Normalization layer. See Section 3.3 of the paper: 
+# https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf 
+# Only difference is here "n" is half kernel width. 
 def LRN(k, n, alpha, beta): 
     x = cntk.blocks.Placeholder(name='lrn_arg') 
     x2 = cntk.ops.square(x) 

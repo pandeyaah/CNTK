@@ -39,7 +39,7 @@ We use a fixed crop ratio of `0.8` and scale the image to `32x32` pixels for tra
 
 ### ConvNetLRN_CIFAR10_DataAug.py
 
-The forth example added local response normalization (LRN) to the previous example. LRN was used in [AlexNet](../../AlexNet), but it has lost its popularity. We implemented the LRN with a 3D convolution.
+The fourth example added local response normalization (LRN) to the previous example. LRN was used in [AlexNet](../../AlexNet), but it has lost its popularity. We implemented the LRN with a 3D convolution.
 
 Run the example from the current folder using:
 
