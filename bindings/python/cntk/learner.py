@@ -277,7 +277,7 @@ def momentum_as_time_constant_schedule(momentum, epoch_size=None):
     specifies the number of samples after which a gradient has an effect of
     1/e=37%.
 
-    If you want to specify the momentum per sample (or per minibatch),
+    If you want to specify the momentum per minibatch,
     use :func:`momentum_schedule`.
 
     Examples:
