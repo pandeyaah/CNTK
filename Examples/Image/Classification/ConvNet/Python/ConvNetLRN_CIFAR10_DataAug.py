@@ -32,7 +32,7 @@ def create_reader(map_file, mean_file, is_training):
     transforms = []
     if is_training:
         transforms += [
-            cntk.io.ImageDeserializer.crop(crop_type='Random', ratio=0.8, jitter_type='uniRatio') # train uses jitter
+            cntk.io.ImageDeserializer.crop(crop_type='RandomSide', side_ratio=0.8, jitter_type='uniRatio') # train uses jitter
         ]
     transforms += [
         cntk.io.ImageDeserializer.scale(width=image_width, height=image_height, channels=num_channels, interpolations='linear'),
@@ -62,7 +62,7 @@ def LRN(k, n, alpha, beta):
     return cntk.blocks.Block(apply_x, 'LRN')
 
 # Train and evaluate the network.
-def convnet_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
+def convnetlrn_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
     _cntk_py.set_computation_network_trace_level(1)
 
     # Input variables denoting the features and label data
@@ -159,5 +159,5 @@ if __name__=='__main__':
     reader_train = create_reader(os.path.join(data_path, 'train_map.txt'), os.path.join(data_path, 'CIFAR-10_mean.xml'), True)
     reader_test  = create_reader(os.path.join(data_path, 'test_map.txt'), os.path.join(data_path, 'CIFAR-10_mean.xml'), False)
 
-    convnet_cifar10_dataaug(reader_train, reader_test)
+    convnetlrn_cifar10_dataaug(reader_train, reader_test)
 
