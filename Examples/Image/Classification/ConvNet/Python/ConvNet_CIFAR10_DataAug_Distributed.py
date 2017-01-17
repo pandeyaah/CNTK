@@ -53,8 +53,9 @@ def create_image_mb_source(map_file, mean_file, train, total_number_of_samples):
         epoch_size=total_number_of_samples,
         multithreaded_deserializer = True)
 
-# Create the network.
-def create_conv_network():
+# Train and evaluate the network.
+def convnet_cifar10_dataaug(create_train_reader, test_reader, create_dist_learner, epoch_size = 50000, max_epochs=80, log_to_file=None, num_mbs_per_log=None, gen_heartbeat=False):
+    _cntk_py.set_computation_network_trace_level(0)
 
     # Input variables denoting the features and label data
     feature_var = cntk.ops.input_variable((num_channels, image_height, image_width))
@@ -82,6 +83,8 @@ def create_conv_network():
     pe = cntk.ops.classification_error(z, label_var)
 
     cntk.utils.log_number_of_parameters(z) ; print()
+    # training config
+    minibatch_size = 64
 
     return {
         'feature': feature_var,

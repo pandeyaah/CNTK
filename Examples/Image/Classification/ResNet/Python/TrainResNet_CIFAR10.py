@@ -53,7 +53,7 @@ def create_reader(map_file, mean_file, train):
 
 
 # Train and evaluate the network.
-def train_and_evaluate(reader_train, reader_test, network_name, max_epochs):
+def train_and_evaluate(reader_train, reader_test, network_name, epoch_size = 50000, max_epochs = 160):
 
     set_computation_network_trace_level(0)
 
@@ -76,7 +76,6 @@ def train_and_evaluate(reader_train, reader_test, network_name, max_epochs):
     pe = classification_error(z, label_var)
 
     # shared training parameters 
-    epoch_size = 50000                    # for now we manually specify epoch size
     minibatch_size = 128
     momentum_time_constant = -minibatch_size/np.log(0.9)
     l2_reg_weight = 0.0001
@@ -151,4 +150,4 @@ if __name__=='__main__':
     reader_train = create_reader(os.path.join(data_path, 'train_map.txt'), os.path.join(data_path, 'CIFAR-10_mean.xml'), True)
     reader_test  = create_reader(os.path.join(data_path, 'test_map.txt'), os.path.join(data_path, 'CIFAR-10_mean.xml'), False)
 
-    train_and_evaluate(reader_train, reader_test, network_name, epochs)
+    train_and_evaluate(reader_train, reader_test, network_name, max_epochs=epochs)

@@ -65,7 +65,7 @@ def LRN(k, n, alpha, beta):
     return cntk.blocks.Block(apply_x, 'LRN')
 
 # Train and evaluate the network.
-def convnetlrn_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
+def convnetlrn_cifar10_dataaug(reader_train, reader_test, epoch_size=50000, max_epochs = 80):
     _cntk_py.set_computation_network_trace_level(1)
 
     # Input variables denoting the features and label data
@@ -95,7 +95,6 @@ def convnetlrn_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
     pe = cntk.ops.classification_error(z, label_var)
 
     # training config
-    epoch_size = 50000                    # for now we manually specify epoch size
     minibatch_size = 64
 
     # Set learning parameters
@@ -107,6 +106,7 @@ def convnetlrn_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
     
     # trainer object
     learner = cntk.learner.momentum_sgd(z.parameters, lr_schedule, mm_schedule,
+                                        unit_gain = True,
                                         l2_regularization_weight = l2_reg_weight)
     trainer =  cntk.Trainer(z, ce, pe, learner)
 

@@ -45,7 +45,7 @@ def create_reader(map_file, mean_file, is_training):
         randomize=is_training)
 
 # Train and evaluate the network.
-def convnet_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
+def convnet_cifar10_dataaug(reader_train, reader_test, epoch_size = 50000, max_epochs = 80):
     _cntk_py.set_computation_network_trace_level(0)
 
     # Input variables denoting the features and label data
@@ -74,7 +74,6 @@ def convnet_cifar10_dataaug(reader_train, reader_test, max_epochs = 80):
     pe = cntk.ops.classification_error(z, label_var)
 
     # training config
-    epoch_size = 50000                    # for now we manually specify epoch size
     minibatch_size = 64
 
     # Set learning parameters
