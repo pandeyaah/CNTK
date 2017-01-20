@@ -106,6 +106,7 @@
     <None Include="cntk\tests\distributed_test.py" />
     <None Include="cntk\tests\graph_test.py" />
     <None Include="cntk\tests\initializer_test.py" />
+    <None Include="cntk\tests\layers_test.py" />
     <None Include="cntk\tests\learner_test.py" />
     <None Include="cntk\tests\persist_test.py" />
     <None Include="cntk\tests\tensor_test.py" />
@@ -116,6 +117,5 @@
     <None Include="cntk\utils\tests\swig_helper_tests.py" />
     <None Include="cntk\utils\tests\utils_test.py" />
     <None Include="cntk\utils\tests\__init__.py" />
-    <None Include="cntk\tests\layers_test.py" />
   </ItemGroup>
 </Project>
