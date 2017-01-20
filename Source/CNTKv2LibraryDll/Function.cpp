@@ -1218,7 +1218,7 @@ namespace CNTK
     {
         // TODO: This is a temporary and expensive hack until we have a real alias implementation
         // that does not waste memory and compute cycles
-        return UnaryOp(PrimitiveOpType::Pass, operand, Dictionary(), name);
+        return UnaryOp(PrimitiveOpType::NoOp, operand, Dictionary(), name);
     }
 
     FunctionPtr AsBlock(FunctionPtr&& composite, const std::vector<std::pair<Variable, Variable>>& argumentsMap, const std::wstring& blockOpName, const std::wstring& blockName)

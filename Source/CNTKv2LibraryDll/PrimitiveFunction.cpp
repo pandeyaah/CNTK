@@ -291,6 +291,7 @@ namespace CNTK
                     case PrimitiveOpType::Sin:
                     case PrimitiveOpType::Cos:
                     case PrimitiveOpType::Pass:
+                    case PrimitiveOpType::NoOp: 
                         assert(inputs.size() == 1);
                         outputShape = UnaryElementwiseOpOutputShape(inputs[0].Shape());
                         break;
@@ -744,7 +745,7 @@ namespace CNTK
         // The hard requirement that the serialization depends on is that
         // new op type values are only added to the end of the list, after Combine.
         // This also applies to other enums (DataType, VariableKind, etc.)
-        if (op > PrimitiveOpType::NDCG)
+        if (op > PrimitiveOpType::NoOp)
         {
             LogicError("Unexpected op '%ls':'%u' (%s).", 
                         opKey.c_str(), 

@@ -86,10 +86,11 @@ namespace CNTK
         {PrimitiveOpType::Sin, L"Sin"},
         {PrimitiveOpType::Cos, L"Cos"},
         {PrimitiveOpType::Pass, L"Pass"},
-        { PrimitiveOpType::Block, L"Block" },
-        { PrimitiveOpType::Unpooling, L"Unpooling" },
-        { PrimitiveOpType::LambdaRank, L"LambdaRank" },
-        { PrimitiveOpType::NDCG, L"NDCG" },
+        {PrimitiveOpType::Block, L"Block" },
+        {PrimitiveOpType::Unpooling, L"Unpooling" },
+        {PrimitiveOpType::LambdaRank, L"LambdaRank" },
+        {PrimitiveOpType::NDCG, L"NDCG" },
+        {PrimitiveOpType::NoOp, L"NoOp" },
     };
 
     inline const std::wstring& PrimitiveOpTypeName(PrimitiveOpType opType)
@@ -709,6 +710,6 @@ namespace CNTK
 
         // Increasing s_serializationVersion every time we add more ops allows us to print 
         // a more meaningful message when trying to load a new model with a stale binary. 
-        static const size_t s_serializationVersion = 3;
+        static const size_t s_serializationVersion = 4;
     };
 }

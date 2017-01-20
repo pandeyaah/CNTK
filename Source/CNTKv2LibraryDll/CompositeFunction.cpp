@@ -751,6 +751,10 @@ namespace CNTK
             case PrimitiveOpType::Pass:
                 computationNodePtr = New<PassNode<ElementType>>(network->GetDeviceId(), internalNodeName);
                 break;
+            case PrimitiveOpType::NoOp: 
+                if (inputNodesBasePtrs.size() != 1)
+                    LogicError("PrimitiveOpType::NoOp has input with size != 1"); 
+                return inputNodesBasePtrs[0]; 
             default:
                 LogicError("Specified op %S not yet supported", PrimitiveOpTypeName(op).c_str());
                 break;

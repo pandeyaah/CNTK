@@ -64,6 +64,7 @@
     <None Include="cntk\persist.py" />
     <None Include="cntk\pytest.ini" />
     <None Include="cntk\tensor.py" />
+    <None Include="cntk\tests\layers_test.py" />
     <None Include="cntk\trainer.py" />
     <None Include="cntk\__init__.py" />
     <None Include="cntk\io\__init__.py" />
