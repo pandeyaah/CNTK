@@ -247,8 +247,9 @@ def Recurrence(over, go_backwards=False, initial_state=initial_state_default_or_
     if _trace_layers:
         _log_node(h)
         _log_node(combine([h.owner]))
-    apply_x = combine([h], name=name)     # the Function that yielded 'h', so we get to know its inputs
+    apply_x = combine([h])     # the Function that yielded 'h', so we get to know its inputs
     # apply_x is a Function x -> h
+    apply_x = alias(apply_x, name=name)
     return Block(apply_x, 'Recurrence', Record(over=over))
 
 # Delay -- delay input
