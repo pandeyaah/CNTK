@@ -64,7 +64,6 @@
     <None Include="cntk\persist.py" />
     <None Include="cntk\pytest.ini" />
     <None Include="cntk\tensor.py" />
-    <None Include="cntk\tests\layers_test.py" />
     <None Include="cntk\trainer.py" />
     <None Include="cntk\__init__.py" />
     <None Include="cntk\io\__init__.py" />
@@ -94,6 +93,7 @@
     <None Include="cntk\tests\distributed_test.py" />
     <None Include="cntk\tests\graph_test.py" />
     <None Include="cntk\tests\initializer_test.py" />
+    <None Include="cntk\tests\layers_test.py" />
     <None Include="cntk\tests\learner_test.py" />
     <None Include="cntk\tests\persist_test.py" />
     <None Include="cntk\tests\tensor_test.py" />
