@@ -1216,8 +1216,6 @@ namespace CNTK
 
     FunctionPtr Alias(const Variable& operand, const std::wstring& name)
     {
-        // TODO: This is a temporary and expensive hack until we have a real alias implementation
-        // that does not waste memory and compute cycles
         return UnaryOp(PrimitiveOpType::NoOp, operand, Dictionary(), name);
     }
 
