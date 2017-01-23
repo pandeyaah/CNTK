@@ -87,10 +87,10 @@ def test_find_nodes():
     assert find_by_name(d['root'], 'none') is None
 
 
-def test_output_funtion_graph():
+def test_plot(tmpdir):
     d = _simple_dict()
 
-    m = output_function_graph(d['root'])
+    m = plot(d['root'], str(tmpdir / 'plot_test.png'))
     p = "\nPlus"
     t = "\nTimes"
 
