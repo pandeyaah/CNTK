@@ -136,6 +136,7 @@ def plot(node, to_file):
     # initialize a dot object to store vertices and edges
     dot_object = pydot.Dot(graph_name="network_graph", rankdir='TB')
     dot_object.set_node_defaults(shape='rectangle', fixedsize='false',
+                                 style='filled',
                                  height=.85, width=.85, fontsize=12)
     dot_object.set_edge_defaults(fontsize=10)
 
@@ -147,6 +148,17 @@ def plot(node, to_file):
     stack = [node]
     accum = []
     visited = set()
+
+    def node_desc(node):
+        name = "<font point-size=\"10\" face=\"sans\">'%s'</font> <br/>"%node.name
+        try:
+            name += "<b><font point-size=\"14\" face=\"sans\">%s</font></b> <br/>"%node.op_name
+        except AttributeError:
+            pass
+
+        name += "<font point-size=\"8\" face=\"sans\">%s</font>"%node.uid
+
+        return '<' + name + '>'
 
     while stack:
         node = stack.pop()
@@ -160,35 +172,51 @@ def plot(node, to_file):
             stack.extend(node.inputs)
 
             # add current node
-            model.append(node.op_name)
-            model.append('(')
+            line = [node.op_name]
+            line.append('(')
 
-            cur_node = pydot.Node(node.op_name + ' ' + node.uid, label=node.op_name, shape='circle',
-                                  fixedsize='true', height=1, width=1)
+            cur_node = pydot.Node(node.uid, label=node_desc(node),
+                    shape='circle')
             dot_object.add_node(cur_node)
 
             # add node's inputs
             for i in range(len(node.inputs)):
                 child = node.inputs[i]
 
-                model.append(child.uid)
+                line.append(child.uid)
                 if i != len(node.inputs) - 1:
-                    model.append(', ')
+                    line.append(', ')
 
-                child_node = pydot.Node(child.uid)
+                if child.is_input:
+                    shape = 'invhouse'
+                    color = 'yellow'
+                elif child.is_parameter:
+                    shape = 'diamond'
+                    color = 'green'
+                elif child.is_constant:
+                    shape = 'rectangle'
+                    color = 'lightblue'
+                else:
+                    shape = 'invhouse'
+                    color = 'grey'
+
+                child_node = pydot.Node(child.uid, label=node_desc(child),
+                        shape=shape, color=color)
                 dot_object.add_node(child_node)
                 dot_object.add_edge(pydot.Edge(
                     child_node, cur_node, label=str(child.shape)))
 
-            # ad node's output
-            model.append(') -> ')
-            model.append(node.outputs[0].uid)
-            model.append('\n')
+            # add node's output
+            line.append(') -> ')
+            line = ''.join(line)
 
-            out_node = pydot.Node(node.outputs[0].uid)
-            dot_object.add_node(out_node)
-            dot_object.add_edge(pydot.Edge(
-                cur_node, out_node, label=str(node.outputs[0].shape)))
+            for n in node.outputs:
+                model.append(line + n.uid + ';\n')
+
+                out_node = pydot.Node(n.uid, label=node_desc(n))
+                dot_object.add_node(out_node)
+                dot_object.add_edge(pydot.Edge(
+                    cur_node, out_node, label=str(n.shape)))
 
         except AttributeError:
             # OutputVariable node
@@ -208,6 +236,6 @@ def plot(node, to_file):
     else:
         dot_object.write_raw(to_file)
 
-    model = ''.join(model)
+    model = "\n".join(reversed(model))
 
-    return "\n".join(model.split("\n")[::-1])
+    return model

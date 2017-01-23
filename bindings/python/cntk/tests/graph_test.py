@@ -55,6 +55,9 @@ def _simple_dict():
     d['op2'] = times(d['op1'], d['p1'], name='op2')
     d['root'] = d['op2']
 
+    d['target'] = input_variable((), name='label')
+    d['all'] = combine([d['root'], minus(d['target'], 1)], name='all')
+
     return d
 
 
@@ -90,9 +93,9 @@ def test_find_nodes():
 def test_plot(tmpdir):
     d = _simple_dict()
 
-    m = plot(d['root'], str(tmpdir / 'plot_test.png'))
-    p = "\nPlus"
-    t = "\nTimes"
+    m = plot(d['all'], str(tmpdir / 'plot_test.png'))
+    p = "Plus"
+    t = "Times"
 
     assert len(m) != 0
     assert p in m
