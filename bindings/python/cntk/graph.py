@@ -105,8 +105,7 @@ def find_by_name(node, node_name):
 def plot(node, to_file):
     '''
     Walks through every node of the graph starting at ``node``,
-    creates a network graph, and saves it as a string. If dot_file_name or 
-    png_file_name specified corresponding files will be saved.
+    creates a network graph, and outputs a DOT or PNG file.
 
     Requirements:
 
