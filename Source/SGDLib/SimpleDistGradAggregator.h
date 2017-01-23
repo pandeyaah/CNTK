@@ -141,8 +141,8 @@ private:
         // When called the first time let's setup the intermediateCPU buffers for gradient aggregation if needed
         if (!m_initialized)
         {
-            int deviceId = gradients[0]->GetDeviceId();
             m_initialized = true;
+            int deviceId = gradients[0]->GetDeviceId();
 
             if (!m_nccl.IsSupported() && (deviceId != CPUDEVICE))
                 m_allocator.reset(new CUDAPageLockedMemAllocator(deviceId));
@@ -193,6 +193,7 @@ private:
 
                 m_bufferedGradHeader->Clear();
             }
+            m_AggregationBuffer->SetValue(0);
         }
     }
 
@@ -227,19 +228,21 @@ private:
             }
         }
 
-        // Initiate transfer of the gradient matrices to the CPU if needed
         // Copy all gradient data into a single contiguous buffer
-        size_t offset = 0;
-        for (size_t i = 0; i < numGradMatrices; ++i)
+        if (!m_nccl.IsSupported())
         {
-            m_AggregationBuffer->ColumnSlice(offset, gradients[i]->GetNumElements()).AssignValuesOf(gradients[i]->Reshaped(1, gradients[i]->GetNumElements()));
-            offset += gradients[i]->GetNumElements();
-        }
+            size_t offset = 0;
+            for (size_t i = 0; i < numGradMatrices; ++i)
+            {
+                m_AggregationBuffer->ColumnSlice(offset, gradients[i]->GetNumElements()).AssignValuesOf(gradients[i]->Reshaped(1, gradients[i]->GetNumElements()));
+                offset += gradients[i]->GetNumElements();
+            }
 
-        if (!m_nccl.IsSupported() && deviceId >= 0)
-        {
-            // Copy from GPU to CPU
-            m_gpuDataTransferers->CopyGPUToCPUAsync(m_AggregationBuffer->Data(), m_AggregationBuffer->GetNumElements(), m_intermediateCPUBuffers.get());
+            // Initiate transfer of the bufferred data to the CPU if needed
+            if (deviceId >= 0)
+            {
+                m_gpuDataTransferers->CopyGPUToCPUAsync(m_AggregationBuffer->Data(), m_AggregationBuffer->GetNumElements(), m_intermediateCPUBuffers.get());
+            }
         }
 
         // Initiate receive of the header on the main node
@@ -274,7 +277,7 @@ private:
                 MPIWrapper::GetDataType(reductionBuffer), MPI_SUM, m_mpi->Communicator()) || MpiFail("MPI_Allreduce");
             
         } 
-        else if (m_nccl.IsSupported())
+        else
         {
             m_nccl.AllReduce(gradients);
         }
@@ -323,10 +326,11 @@ private:
             if (deviceId >= 0)
             {
                 m_gpuDataTransferers->CopyCPUToGPUAsync(m_intermediateCPUBuffers.get(), m_AggregationBuffer->GetNumElements(), m_AggregationBuffer->Data());
+                m_gpuDataTransferers->WaitForCopyCPUToGPUAsync();
             }
 
             // Copy all gradient data back from the single contiguous buffer used for aggregation
-            offset = 0;
+            size_t offset = 0;
             for (size_t i = 0; i < numGradMatrices; ++i)
             {
                 gradients[i]->AssignValuesOf(m_AggregationBuffer->ColumnSlice(offset, gradients[i]->GetNumElements()).Reshaped(gradients[i]->GetNumRows(), gradients[i]->GetNumCols()));
@@ -338,13 +342,8 @@ private:
         if (!m_mpi->IsMainNode())
             MPI_Wait(&recvAggHeaderRequest, MPI_STATUSES_IGNORE) || MpiFail("MPI_Wait");
 
-        // Wait for all the transfers to finish
         if (m_nccl.IsSupported())
             m_nccl.Sync();
-        else if (deviceId >= 0)
-        {
-            m_gpuDataTransferers->WaitForCopyCPUToGPUAsync();
-        }
 
         // Wait for completion of the async send requests
         if (!m_mpi->IsMainNode())
