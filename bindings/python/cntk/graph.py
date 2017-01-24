@@ -144,7 +144,7 @@ def plot(node, to_file):
 
     # walk every node of the graph iteratively
     visitor = lambda x: True
-    stack = [node]
+    stack = [node.root_function]
     accum = []
     visited = set()
 
