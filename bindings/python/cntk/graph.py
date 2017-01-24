@@ -131,13 +131,13 @@ def plot(node, to_file=None):
     else:
         suffix = None
 
-    try:
-        import pydot_ng as pydot
-    except ImportError:
-        raise ImportError(
-            "PNG and DOT format requires pydot_ng package. Unable to import pydot_ng.")
-
     if to_file:
+        try:
+            import pydot_ng as pydot
+        except ImportError:
+            raise ImportError(
+                "PNG and DOT format requires pydot_ng package. Unable to import pydot_ng.")
+
         # initialize a dot object to store vertices and edges
         dot_object = pydot.Dot(graph_name="network_graph", rankdir='TB')
         dot_object.set_node_defaults(shape='rectangle', fixedsize='false',
@@ -148,10 +148,8 @@ def plot(node, to_file=None):
     # string to store model
     model = []
 
-    # walk every node of the graph iteratively
-    visitor = lambda x: True
     stack = [node.root_function]
-    accum = []
+
     visited = set()
 
     def node_desc(node):
@@ -164,6 +162,11 @@ def plot(node, to_file=None):
         name += "<font point-size=\"8\" face=\"sans\">%s</font>"%node.uid
 
         return '<' + name + '>'
+
+    def shape_desc(node):
+        static_shape = str(node.shape)
+        num_dyn_axes = len(node.dynamic_axes)
+        return "#dyn: %i\nstatic: %s"%(num_dyn_axes, static_shape)
 
     while stack:
         node = stack.pop()
@@ -211,7 +214,7 @@ def plot(node, to_file=None):
                             shape=shape, color=color)
                     dot_object.add_node(child_node)
                     dot_object.add_edge(pydot.Edge(
-                        child_node, cur_node, label=str(child.shape)))
+                        child_node, cur_node, label=shape_desc(child)))
 
             # add node's output
             line.append(') -> ')
@@ -224,7 +227,7 @@ def plot(node, to_file=None):
                     out_node = pydot.Node(n.uid, label=node_desc(n))
                     dot_object.add_node(out_node)
                     dot_object.add_edge(pydot.Edge(
-                        cur_node, out_node, label=str(n.shape)))
+                        cur_node, out_node, label=shape_desc(node)))
 
         except AttributeError:
             # OutputVariable node
@@ -235,9 +238,6 @@ def plot(node, to_file=None):
                 pass
 
     visited.add(node)
-
-    if visitor(node):
-        accum.append(node)
 
     if to_file:
         if suffix == '.png':

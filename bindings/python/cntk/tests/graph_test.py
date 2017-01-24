@@ -93,7 +93,7 @@ def test_find_nodes():
 def test_plot():
     d = _simple_dict()
 
-    m = plot(d['all'])
+    m = plot(d['all'], r'c:\blis\test.png')
     p = "Plus"
     t = "Times"
 
