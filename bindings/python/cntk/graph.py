@@ -102,10 +102,11 @@ def find_by_name(node, node_name):
     return result[0]
 
 
-def plot(node, to_file):
+def plot(node, to_file=None):
     '''
     Walks through every node of the graph starting at ``node``,
-    creates a network graph, and outputs a DOT or PNG file.
+    creates a network graph, and returns a network description. It `to_file` is
+    speicied, it outputs a DOT or PNG file depending on the file name's suffix.
 
     Requirements:
 
@@ -115,16 +116,20 @@ def plot(node, to_file):
 
     Args:
         node (graph node): the node to start the journey from
-        to_file (`str`): file with either 'dot' or 'png' as suffix to denote
-         what format should be written
+        to_file (`str`, default None): file with either 'dot' or 'png' as
+        suffix to denote what format should be written. If `None` then nothing
+        will be plot, and the returned output can be used to debug the graph.
 
     Returns:
-        `str` containing all nodes and edges
+        `str` describing the graph
     '''
 
-    suffix = os.path.splitext(to_file)[1].lower()
-    if suffix not in ('.png', '.dot'):
-        raise ValueError('only suffix ".png" and ".dot" are supported')
+    if to_file:
+        suffix = os.path.splitext(to_file)[1].lower()
+        if suffix not in ('.png', '.dot'):
+            raise ValueError('only suffix ".png" and ".dot" are supported')
+    else:
+        suffix = None
 
     try:
         import pydot_ng as pydot
@@ -132,12 +137,13 @@ def plot(node, to_file):
         raise ImportError(
             "PNG and DOT format requires pydot_ng package. Unable to import pydot_ng.")
 
-    # initialize a dot object to store vertices and edges
-    dot_object = pydot.Dot(graph_name="network_graph", rankdir='TB')
-    dot_object.set_node_defaults(shape='rectangle', fixedsize='false',
-                                 style='filled',
-                                 height=.85, width=.85, fontsize=12)
-    dot_object.set_edge_defaults(fontsize=10)
+    if to_file:
+        # initialize a dot object to store vertices and edges
+        dot_object = pydot.Dot(graph_name="network_graph", rankdir='TB')
+        dot_object.set_node_defaults(shape='rectangle', fixedsize='false',
+                                     style='filled',
+                                     height=.85, width=.85, fontsize=12)
+        dot_object.set_edge_defaults(fontsize=10)
 
     # string to store model
     model = []
@@ -174,9 +180,10 @@ def plot(node, to_file):
             line = [node.op_name]
             line.append('(')
 
-            cur_node = pydot.Node(node.uid, label=node_desc(node),
-                    shape='circle')
-            dot_object.add_node(cur_node)
+            if to_file:
+                cur_node = pydot.Node(node.uid, label=node_desc(node),
+                        shape='circle')
+                dot_object.add_node(cur_node)
 
             # add node's inputs
             for i in range(len(node.inputs)):
@@ -186,24 +193,25 @@ def plot(node, to_file):
                 if i != len(node.inputs) - 1:
                     line.append(', ')
 
-                if child.is_input:
-                    shape = 'invhouse'
-                    color = 'yellow'
-                elif child.is_parameter:
-                    shape = 'diamond'
-                    color = 'green'
-                elif child.is_constant:
-                    shape = 'rectangle'
-                    color = 'lightblue'
-                else:
-                    shape = 'invhouse'
-                    color = 'grey'
+                if to_file:
+                    if child.is_input:
+                        shape = 'invhouse'
+                        color = 'yellow'
+                    elif child.is_parameter:
+                        shape = 'diamond'
+                        color = 'green'
+                    elif child.is_constant:
+                        shape = 'rectangle'
+                        color = 'lightblue'
+                    else:
+                        shape = 'invhouse'
+                        color = 'grey'
 
-                child_node = pydot.Node(child.uid, label=node_desc(child),
-                        shape=shape, color=color)
-                dot_object.add_node(child_node)
-                dot_object.add_edge(pydot.Edge(
-                    child_node, cur_node, label=str(child.shape)))
+                    child_node = pydot.Node(child.uid, label=node_desc(child),
+                            shape=shape, color=color)
+                    dot_object.add_node(child_node)
+                    dot_object.add_edge(pydot.Edge(
+                        child_node, cur_node, label=str(child.shape)))
 
             # add node's output
             line.append(') -> ')
@@ -212,10 +220,11 @@ def plot(node, to_file):
             for n in node.outputs:
                 model.append(line + n.uid + ';\n')
 
-                out_node = pydot.Node(n.uid, label=node_desc(n))
-                dot_object.add_node(out_node)
-                dot_object.add_edge(pydot.Edge(
-                    cur_node, out_node, label=str(n.shape)))
+                if to_file:
+                    out_node = pydot.Node(n.uid, label=node_desc(n))
+                    dot_object.add_node(out_node)
+                    dot_object.add_edge(pydot.Edge(
+                        cur_node, out_node, label=str(n.shape)))
 
         except AttributeError:
             # OutputVariable node
@@ -230,10 +239,11 @@ def plot(node, to_file):
     if visitor(node):
         accum.append(node)
 
-    if suffix == '.png':
-        dot_object.write_png(to_file, prog='dot')
-    else:
-        dot_object.write_raw(to_file)
+    if to_file:
+        if suffix == '.png':
+            dot_object.write_png(to_file, prog='dot')
+        else:
+            dot_object.write_raw(to_file)
 
     model = "\n".join(reversed(model))
 
