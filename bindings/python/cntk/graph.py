@@ -248,3 +248,17 @@ def plot(node, to_file=None):
     model = "\n".join(reversed(model))
 
     return model
+
+def output_function_graph(node, dot_file_path=None, png_file_path=None):
+    import warnings
+    warnings.warn('This will be removed in future versions. Please use '
+            'plot(...) instead', DeprecationWarning)
+
+    result = plot(node, dot_file_path)
+    if png_file_path:
+        result2 = plot(node, dot_file_path)
+        if not result:
+            result = result2
+
+    return result
+
